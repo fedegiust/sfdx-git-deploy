@@ -1,0 +1,6 @@
+{
+  "commandDescription": "Uses git diff to get the latest changes to deploy",
+  "branchFlagDescription": "Base branch to compare to",
+  "outputDirFlagDescription": "Output dir to put the files to be deployed",
+  "errorMsg": "An error ocurred '%s'."
+}
