@@ -6,7 +6,7 @@ const shell = require('shelljs');
 Messages.importMessagesDirectory(__dirname);
 // Load the specific messages for this file. Messages from @salesforce/command, @salesforce/core,
 // or any library that is using the messages framework can also be loaded this way.
-const messages = Messages.loadMessages('gitDeploy', 'org');
+const messages = Messages.loadMessages('sfdx-git-deploy', 'org');
 
 export default class Org extends SfdxCommand {
 
