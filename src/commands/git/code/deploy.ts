@@ -19,10 +19,9 @@ export default class Org extends SfdxCommand {
     public static args = [{ name: 'file' }];
 
     protected static flagsConfig = {
-        // flag with a value (-n, --name=VALUE)
         branch: flags.string({ char: 'b', description: messages.getMessage('branchFlagDescription') }),
-        output: flags.string({ char: 'o', description: messages.getMessage('outputDirFlagDescription') }),
-        deploy: flags.string({ char: 'd', description: messages.getMessage('deployDescription') }),
+        output: flags.string({ char: 'd', description: messages.getMessage('outputDirFlagDescription') }),
+        testlevel: flags.string({ char: 'l', description: messages.getMessage('runTestsFlagDescription') })
     };
 
     // Comment this out if your command does not require an org username
@@ -44,7 +43,28 @@ export default class Org extends SfdxCommand {
             shell.exit(1);
         }
 
-        this.ux.log('Comparing local branch against ' + this.flags.branch);
+        if (this.flags.branch == null) {
+            this.ux.log('The local branch you need to compare to is missing ');
+            return null;
+        }
+
+        if (this.flags.output == null) {
+            this.ux.log('The output folder to put the files in is missing ');
+            return null;
+        }
+
+        if (this.flags.testlevel == null) {
+            this.ux.log('The local branch you need to compare to is missing ');
+            this.flags.testlevel = 'RunLocalTests';
+        }        
+
+        this.ux.log(`Preparing deployment`);
+        this.ux.log(`====================`);
+        this.ux.log(`Branch to compare: ${this.flags.branch}`);
+        this.ux.log(`Path to put the files in: ${this.flags.output}`);
+        this.ux.log(`Test level: ${this.flags.testlevel}`);
+
+        this.ux.log(`Comparing local branch against ${this.flags.branch}`);
 
         shell.config.verbose = false;
 
@@ -62,7 +82,7 @@ export default class Org extends SfdxCommand {
 
         let filesListArr = filesList.split('\n');
 
-        let untrackedFilesList = shell.exec(`git ls-files -o --exclude-standard`);
+        let untrackedFilesList = shell.exec(`git ls-files -o --exclude-standard --exclude="*-meta.xml"`);
 
         this.ux.log(`List of untracked files to deploy:\n${untrackedFilesList}`);
 
@@ -80,12 +100,15 @@ export default class Org extends SfdxCommand {
             if (dest != '') {
                 shell.mkdir('-p', dest);
                 results[numResults++] = shell.cp('-r', element, dest);
+                results[numResults++] = shell.cp('-r', element + '-meta.xml', dest);
                 numFiles++;
             }
         });
 
         if (!results[numResults - 1].stderr) {
-            results[numResults++] = shell.exec(`sfdx force:source:deploy -p "${this.flags.output}" -u ${this.flags.targetusername}`);
+            this.ux.log(`Deploying`);
+            this.ux.log(`=========`);
+            results[numResults++] = shell.exec(`sfdx force:source:deploy -p "${this.flags.output}" -u ${this.flags.targetusername} -l ${this.flags.testlevel}`);
         } else {
             this.ux.log(`Nothing to deploy ${results[numResults - 1].stderr}`);
         }
