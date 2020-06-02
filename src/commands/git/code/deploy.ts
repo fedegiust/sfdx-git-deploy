@@ -76,23 +76,30 @@ export default class Org extends SfdxCommand {
 
         shell.mkdir('-p', this.flags.output);
 
+        this.ux.log(`Checking for tracked files to deploy:`);
+
         let filesList = shell.exec(`git diff --no-renames --diff-filter=d --name-only ${this.flags.branch} ${workingBranch}`);
 
-        this.ux.log(`List of files to deploy:\n${filesList}`);
+        if (filesList.lengt == 0) {
+            this.ux.log(`There are no tracked files to deploy, add at least a commit with the files you need to deploy.`);
+            return null;
+        }
 
         let filesListArr = filesList.split('\n');
 
-        let untrackedFilesList = shell.exec(`git ls-files -o --exclude-standard --exclude="*-meta.xml"`);
+        let untrackedFilesList = shell.exec(`git ls-files -o --exclude-standard `);
 
-        this.ux.log(`List of untracked files to deploy:\n${untrackedFilesList}`);
+        if (untrackedFilesList.length > 0) {
+            this.ux.log(`List of untracked files to deploy:\n${untrackedFilesList}`);
 
-        let untrackedFilesListArr = untrackedFilesList.split('\n');
+            let untrackedFilesListArr = untrackedFilesList.split('\n');
+    
+            untrackedFilesListArr.forEach(element => {
+                filesListArr.push(element);
+            });
 
-        untrackedFilesListArr.forEach(element => {
-            filesListArr.push(element);
-        });
-
-        this.ux.log(`File list ${filesListArr}`);
+            this.ux.log(`File list including untracked files \n ${filesListArr}`);
+        }
 
         let numFiles = 0;
         filesListArr.forEach(element => {
@@ -100,7 +107,9 @@ export default class Org extends SfdxCommand {
             if (dest != '') {
                 shell.mkdir('-p', dest);
                 results[numResults++] = shell.cp('-r', element, dest);
-                results[numResults++] = shell.cp('-r', element + '-meta.xml', dest);
+                if (!element.includes('-meta.xml') && filesListArr.indexOf(element + '-meta.xml') == -1) {
+                    results[numResults++] = shell.cp('-r', element + '-meta.xml', dest);
+                }
                 numFiles++;
             }
         });
@@ -108,7 +117,7 @@ export default class Org extends SfdxCommand {
         if (!results[numResults - 1].stderr) {
             this.ux.log(`Deploying`);
             this.ux.log(`=========`);
-            results[numResults++] = shell.exec(`sfdx force:source:deploy -p "${this.flags.output}" -u ${this.flags.targetusername} -l ${this.flags.testlevel}`);
+            results[numResults++] = shell.exec(`sfdx force:source:deploy -p "${this.flags.output}" -u ${this.flags.targetusername} -l ${this.flags.testlevel} --loglevel=debug --verbose`);
         } else {
             this.ux.log(`Nothing to deploy ${results[numResults - 1].stderr}`);
         }
