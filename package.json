@@ -1,7 +1,7 @@
 {
   "name": "sfdx-git-deploy",
   "description": "sfdx plugin to deploy latest changes to sandbox",
-  "version": "1.0.25",
+  "version": "1.0.26",
   "author": "Federico Giust",
   "bugs": "https://github.com/fedegiust/sfdx-deploy-git/issues",
   "dependencies": {
