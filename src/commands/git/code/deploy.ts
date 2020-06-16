@@ -54,7 +54,7 @@ export default class Org extends SfdxCommand {
         }
 
         if (this.flags.testlevel == null) {
-            this.ux.log('The local branch you need to compare to is missing ');
+            this.ux.log('The test level is not set, so it will default to RunLocalTests. ');
             this.flags.testlevel = 'RunLocalTests';
         }        
 
@@ -68,9 +68,8 @@ export default class Org extends SfdxCommand {
 
         shell.config.verbose = false;
 
+        this.ux.log(`Current working branch is : `);
         let workingBranch = shell.exec(`git rev-parse --abbrev-ref HEAD`);
-
-        this.ux.log(`Current working branch is : ${workingBranch}`);
 
         this.ux.log(`Creating outpud dir: ${this.flags.output}`);
 
