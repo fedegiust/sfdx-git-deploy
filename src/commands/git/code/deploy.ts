@@ -103,8 +103,8 @@ export default class Org extends SfdxCommand {
         shell.mkdir('-p', this.flags.output);
 
         let filesList = "";
-        
-        if (this.flags.branch === workingBranch) {
+
+        if (this.flags.branch.trim() === workingBranch.trim()) {
             // if we are on the same branch, compare commits
             this.ux.log('Getting files from latest commit');
             filesList = shell.exec(`git diff --no-renames --diff-filter=d --name-only --relative=${this.flags.projectfolder} origin/${this.flags.branch} HEAD~1`);
