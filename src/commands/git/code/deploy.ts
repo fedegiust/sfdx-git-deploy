@@ -107,7 +107,7 @@ export default class Org extends SfdxCommand {
         if (this.flags.branch === workingBranch) {
             // if we are on the same branch, compare commits
             this.ux.log('Getting files from latest commit');
-            filesList = shell.exec(`git diff --no-renames --diff-filter=d --name-only --relative=${this.flags.projectfolder} HEAD HEAD~1`);
+            filesList = shell.exec(`git diff --no-renames --diff-filter=d --name-only --relative=${this.flags.projectfolder} origin/${this.flags.branch} HEAD~1`);
         } else {
             this.ux.log('Getting changed files from branch');
             filesList = shell.exec(`git diff --no-renames --diff-filter=d --name-only origin/${this.flags.branch} ${workingBranch} --relative=${this.flags.projectfolder}`);
