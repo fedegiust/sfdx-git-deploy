@@ -110,7 +110,7 @@ export default class Org extends SfdxCommand {
             filesList = shell.exec(`git diff --no-renames --diff-filter=d --name-only --relative=${this.flags.projectfolder} HEAD HEAD~1`);
         } else {
             this.ux.log('Getting changed files from branch');
-            filesList = shell.exec(`git diff --no-renames --diff-filter=d --name-only ${this.flags.branch} ${workingBranch} --relative=${this.flags.projectfolder}`);
+            filesList = shell.exec(`git diff --no-renames --diff-filter=d --name-only origin/${this.flags.branch} ${workingBranch} --relative=${this.flags.projectfolder}`);
         }
 
         // if there are no files to deploy
