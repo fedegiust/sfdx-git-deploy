@@ -23,14 +23,15 @@ export default class Org extends SfdxCommand {
         output: flags.string({ char: 'd', description: messages.getMessage('outputDirFlagDescription') }),
         testlevel: flags.string({ char: 'l', description: messages.getMessage('runTestsFlagDescription') }),
         projectfolder: flags.string({ char: 'p', description: messages.getMessage('projectFolderFlagDescription') }),
-        includeuntracked: flags.string({ char: 'i', description: messages.getMessage('includeUntrackedFlagDescription') })
+        includeuntracked: flags.boolean({ char: 'i', description: messages.getMessage('includeUntrackedFlagDescription') }),
+        validateonly: flags.boolean({ char: 'v', description: messages.getMessage('validateFlagDescription') })
     };
 
     // Comment this out if your command does not require an org username
     protected static requiresUsername = true;
 
     // Comment this out if your command does not support a hub org username
-    protected static supportsDevhubUsername = true;
+    // protected static supportsDevhubUsername = true;
 
     // Set this to true if your command requires a project workspace; 'requiresProject' is false by default
     protected static requiresProject = false;
@@ -70,7 +71,12 @@ export default class Org extends SfdxCommand {
         if (typeof this.flags.includeuntracked == "undefined") {
             this.ux.log('The include untracked flag is not set, so it will default to false. ');
             this.flags.includeuntracked = false;
-        }                 
+        }  
+        
+        if (typeof this.flags.validateonly == "undefined") {
+            this.ux.log('The validate only flag is not set, so it will default to false. ');
+            this.flags.validateonly = false;
+        }          
 
         // Start preparing
         this.ux.log(`Preparing deployment`);
@@ -80,23 +86,25 @@ export default class Org extends SfdxCommand {
         this.ux.log(`Test level: ${this.flags.testlevel}`);
         this.ux.log(`Project Folder: ${this.flags.projectfolder}`);
 
-        shell.config.verbose = true;
+        shell.config.verbose = false;
 
+        this.ux.log(`Current working branch is : `);
         let workingBranch = shell.exec(`git rev-parse --abbrev-ref HEAD`);
-        this.ux.log(`Current working branch is : ${workingBranch}`);
-
-        this.ux.log(`Creating outpud dir: ${this.flags.output}`);
-
-        shell.mkdir('-p', this.flags.output);
 
         this.ux.log(`Checking for tracked files to deploy:`);
+
+        this.ux.log(`Creating outpud dir: ${this.flags.output.replace('"', '')}`);
+
+        shell.mkdir('-p', this.flags.output);
 
         let filesList = "";
         
         if (this.flags.branch === workingBranch) {
             // if we are on the same branch, compare commits
+            this.ux.log('Getting files from latest commit');
             filesList = shell.exec(`git diff --no-renames --diff-filter=d --name-only --relative=${this.flags.projectfolder} HEAD HEAD~1`);
         } else {
+            this.ux.log('Getting changed files from branch');
             filesList = shell.exec(`git diff --no-renames --diff-filter=d --name-only --relative=${this.flags.projectfolder} ${this.flags.branch} ${workingBranch}`);
         }
 
@@ -128,27 +136,27 @@ export default class Org extends SfdxCommand {
         let numFiles = 0;
         // iterate through file list and copy to the output folder
         filesListArr.forEach(element => {
-            let dest = element.substring(0, element.lastIndexOf("/")).replace('force-app', this.flags.output);
-            if (dest != '') {
+            let dest = this.flags.output + '/' + this.flags.projectfolder + '/' + element.substring(0, element.lastIndexOf("/")).replace('force-app', this.flags.output).replace('"', '');
+            if (dest != '' && element != '') {
                 shell.mkdir('-p', dest);
                 if (element.includes("/classes") || element.includes("/triggers") || element.includes("/pages") || element.includes("/components")) {
                     let fn = element.replace('-meta.xml', '');
-                    results[numResults++] = shell.cp('-r', fn, dest);
-                    results[numResults++] = shell.cp('-r', fn + '-meta.xml', dest);
+                    results[numResults++] = shell.cp('-r', fn.replace('main/', this.flags.projectfolder + '/main/'), dest);
+                    results[numResults++] = shell.cp('-r', fn.replace('main/', this.flags.projectfolder + '/main/') + '-meta.xml', dest);
                 } else {
-                    results[numResults++] = shell.cp('-r', element, dest);
+                    results[numResults++] = shell.cp('-r', element.replace('main/', this.flags.projectfolder + '/main/'), dest);
                 }
                 numFiles++;
             }
         });
 
         // if there are files and no errors, then deploy
-        if (!results[numResults - 1].stderr) {
-            this.ux.log(`Deploying`);
-            this.ux.log(`=========`);
-            results[numResults++] = shell.exec(`sfdx force:source:deploy -p "${this.flags.output}" -u ${this.flags.targetusername} -l ${this.flags.testlevel} --loglevel=debug --verbose`);
+        this.ux.log(`Deploying`);
+        this.ux.log(`=========`);
+        if (this.flags.validateonly) {
+            results[numResults++] = shell.exec(`sfdx force:source:deploy -c -p "${this.flags.output}" -u ${this.flags.targetusername} -l ${this.flags.testlevel} --loglevel=debug --verbose -w 60`);
         } else {
-            this.ux.log(`Nothing to deploy ${results[numResults - 1].stderr}`);
+            results[numResults++] = shell.exec(`sfdx force:source:deploy -p "${this.flags.output}" -u ${this.flags.targetusername} -l ${this.flags.testlevel} --loglevel=debug --verbose -w 60`);
         }
 
         if (!results[numResults - 1].stderr) this.ux.log(`Deployed succesfully ${numFiles} files`);
