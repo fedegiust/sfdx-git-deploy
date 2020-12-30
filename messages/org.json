@@ -5,6 +5,7 @@
   "projectFolderFlagDescription": "Project folder to get the files to be deployed.",
   "includeUntrackedFlagDescription": "If you wish to include untracked files.",
   "validateFlagDescription": "If true, it will only run validation without deploying",
+  "verboseFlagDescription": "If true, it will return all commands and errors",
   "runTestsFlagDescription": "Level of tests to run.",
   "deployDescription": "Set to true if you want the deployment to be done after placing the files in the output folder.",
   "errorMsg": "An error ocurred '%s'."

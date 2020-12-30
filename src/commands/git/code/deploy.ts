@@ -24,7 +24,8 @@ export default class Org extends SfdxCommand {
         testlevel: flags.string({ char: 'l', description: messages.getMessage('runTestsFlagDescription') }),
         projectfolder: flags.string({ char: 'p', description: messages.getMessage('projectFolderFlagDescription') }),
         includeuntracked: flags.boolean({ char: 'i', description: messages.getMessage('includeUntrackedFlagDescription') }),
-        validateonly: flags.boolean({ char: 'v', description: messages.getMessage('validateFlagDescription') })
+        validateonly: flags.boolean({ char: 'v', description: messages.getMessage('validateFlagDescription') }),
+        verbose: flags.boolean({ description: messages.getMessage('verboseFlagDescription') })
     };
 
     // Comment this out if your command does not require an org username
@@ -78,6 +79,10 @@ export default class Org extends SfdxCommand {
             this.flags.validateonly = false;
         }          
 
+        if (typeof this.flags.verbose == "undefined") {
+            this.flags.verbose = false;
+        }  
+
         // Start preparing
         this.ux.log(`Preparing deployment`);
         this.ux.log(`====================`);
@@ -86,7 +91,7 @@ export default class Org extends SfdxCommand {
         this.ux.log(`Test level: ${this.flags.testlevel}`);
         this.ux.log(`Project Folder: ${this.flags.projectfolder}`);
 
-        shell.config.verbose = false;
+        shell.config.verbose = this.flags.verbose;
 
         this.ux.log(`Current working branch is : `);
         let workingBranch = shell.exec(`git rev-parse --abbrev-ref HEAD`);
@@ -105,7 +110,7 @@ export default class Org extends SfdxCommand {
             filesList = shell.exec(`git diff --no-renames --diff-filter=d --name-only --relative=${this.flags.projectfolder} HEAD HEAD~1`);
         } else {
             this.ux.log('Getting changed files from branch');
-            filesList = shell.exec(`git diff --no-renames --diff-filter=d --name-only --relative=${this.flags.projectfolder} ${this.flags.branch} ${workingBranch}`);
+            filesList = shell.exec(`git diff --no-renames --diff-filter=d --name-only ${this.flags.branch} ${workingBranch} --relative=${this.flags.projectfolder}`);
         }
 
         // if there are no files to deploy
