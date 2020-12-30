@@ -25,7 +25,7 @@ export default class Org extends SfdxCommand {
         projectfolder: flags.string({ char: 'p', description: messages.getMessage('projectFolderFlagDescription') }),
         includeuntracked: flags.boolean({ char: 'i', description: messages.getMessage('includeUntrackedFlagDescription') }),
         validateonly: flags.boolean({ char: 'v', description: messages.getMessage('validateFlagDescription') }),
-        verbose: flags.boolean({ description: messages.getMessage('verboseFlagDescription') })
+        verbose: flags.builtin({ description: messages.getMessage('verboseFlagDescription') })
     };
 
     // Comment this out if your command does not require an org username
