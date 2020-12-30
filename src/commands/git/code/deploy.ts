@@ -141,15 +141,22 @@ export default class Org extends SfdxCommand {
         let numFiles = 0;
         // iterate through file list and copy to the output folder
         filesListArr.forEach(element => {
-            let dest = this.flags.output + '/' + this.flags.projectfolder + '/' + element.substring(0, element.lastIndexOf("/")).replace('"', '');
+            let dest = this.flags.output + '/' + element.substring(0, element.lastIndexOf("/")).replace('"', '');
             if (dest != '' && element != '') {
                 shell.mkdir('-p', dest);
                 if (element.includes("/classes") || element.includes("/triggers") || element.includes("/pages") || element.includes("/components")) {
                     let fn = element.replace('-meta.xml', '');
-                    results[numResults++] = shell.cp('-r', fn.replace('main/', this.flags.projectfolder + '/main/'), dest);
-                    results[numResults++] = shell.cp('-r', fn.replace('main/', this.flags.projectfolder + '/main/') + '-meta.xml', dest);
+                    if (fn.startsWith('"main') || fn.startsWith('main')) {
+                        fn = fn.replace('main/', this.flags.projectfolder + '/main/');
+                    }
+                    results[numResults++] = shell.cp('-r', fn, dest);
+                    results[numResults++] = shell.cp('-r', fn + '-meta.xml', dest);
                 } else {
-                    results[numResults++] = shell.cp('-r', element.replace('main/', this.flags.projectfolder + '/main/'), dest);
+                    let fn = element;
+                    if (fn.startsWith('"main') || fn.startsWith('main')) {
+                        fn = fn.replace('main/', this.flags.projectfolder + '/main/');
+                    }                    
+                    results[numResults++] = shell.cp('-r', fn, dest);
                 }
                 numFiles++;
             }
