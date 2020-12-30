@@ -141,7 +141,7 @@ export default class Org extends SfdxCommand {
         let numFiles = 0;
         // iterate through file list and copy to the output folder
         filesListArr.forEach(element => {
-            let dest = this.flags.output + '/' + this.flags.projectfolder + '/' + element.substring(0, element.lastIndexOf("/")).replace('force-app', this.flags.output).replace('"', '');
+            let dest = this.flags.output + '/' + this.flags.projectfolder + '/' + element.substring(0, element.lastIndexOf("/")).replace('"', '');
             if (dest != '' && element != '') {
                 shell.mkdir('-p', dest);
                 if (element.includes("/classes") || element.includes("/triggers") || element.includes("/pages") || element.includes("/components")) {
