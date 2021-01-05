@@ -110,7 +110,7 @@ export default class Org extends SfdxCommand {
             filesList = shell.exec(`git diff --no-renames --diff-filter=d --name-only --relative=${this.flags.projectfolder} origin/${this.flags.branch} HEAD~1`);
         } else {
             this.ux.log('Getting changed files from branch');
-            filesList = shell.exec(`git diff --no-renames --diff-filter=d --name-only origin/${this.flags.branch} ${workingBranch} --relative=${this.flags.projectfolder}`);
+            filesList = shell.exec(`git diff --no-renames --diff-filter=d --name-only --relative=${this.flags.projectfolder} origin/${this.flags.branch} ${workingBranch}`);
         }
 
         // if there are no files to deploy
@@ -141,24 +141,26 @@ export default class Org extends SfdxCommand {
         let numFiles = 0;
         // iterate through file list and copy to the output folder
         filesListArr.forEach(element => {
-            let dest = this.flags.output + '/' + element.substring(0, element.lastIndexOf("/")).replace('"', '');
-            if (dest != '' && element != '') {
-                shell.mkdir('-p', dest);
-                if (element.includes("/classes") || element.includes("/triggers") || element.includes("/pages") || element.includes("/components")) {
-                    let fn = element.replace('-meta.xml', '');
-                    if (fn.startsWith('"main') || fn.startsWith('main')) {
-                        fn = fn.replace('main/', this.flags.projectfolder + '/main/');
+            if (element.includes(`${this.flags.projectfolder}`)) {
+                let dest = this.flags.output + '/' + element.substring(0, element.lastIndexOf("/")).replace('"', '');
+                if (dest != '' && element != '') {
+                    shell.mkdir('-p', dest);
+                    if (element.includes("/classes") || element.includes("/triggers") || element.includes("/pages") || element.includes("/components")) {
+                        let fn = element.replace('-meta.xml', '');
+                        if (fn.startsWith('"main') || fn.startsWith('main')) {
+                            fn = fn.replace('main/', this.flags.projectfolder + '/main/');
+                        }
+                        results[numResults++] = shell.cp('-r', fn, dest);
+                        results[numResults++] = shell.cp('-r', fn + '-meta.xml', dest);
+                    } else {
+                        let fn = element;
+                        if (fn.startsWith('"main') || fn.startsWith('main')) {
+                            fn = fn.replace('main/', this.flags.projectfolder + '/main/');
+                        }                    
+                        results[numResults++] = shell.cp('-r', fn, dest);
                     }
-                    results[numResults++] = shell.cp('-r', fn, dest);
-                    results[numResults++] = shell.cp('-r', fn + '-meta.xml', dest);
-                } else {
-                    let fn = element;
-                    if (fn.startsWith('"main') || fn.startsWith('main')) {
-                        fn = fn.replace('main/', this.flags.projectfolder + '/main/');
-                    }                    
-                    results[numResults++] = shell.cp('-r', fn, dest);
+                    numFiles++;
                 }
-                numFiles++;
             }
         });
 
