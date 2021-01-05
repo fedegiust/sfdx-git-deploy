@@ -141,7 +141,7 @@ export default class Org extends SfdxCommand {
         let numFiles = 0;
         // iterate through file list and copy to the output folder
         filesListArr.forEach(element => {
-            if (element.includes(`${this.flags.projectfolder}`)) {
+            if (!element.startsWith('.') && !element.startsWith('config') && !element.startsWith('manifest') && !element.startsWith('node_modules') && !element.startsWith('scripts')) {
                 let dest = this.flags.output + '/' + element.substring(0, element.lastIndexOf("/")).replace('"', '');
                 if (dest != '' && element != '') {
                     shell.mkdir('-p', dest);
