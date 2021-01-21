@@ -1,5 +1,5 @@
 import { flags, SfdxCommand } from '@salesforce/command';
-import { Messages } from '@salesforce/core';
+import { Messages, SfdxError } from '@salesforce/core';
 const shell = require('shelljs');
 
 // Initialize Messages with the current plugin directory
@@ -110,7 +110,7 @@ export default class Org extends SfdxCommand {
             filesList = shell.exec(`git diff --no-renames --diff-filter=d --name-only --relative=${this.flags.projectfolder} origin/${this.flags.branch} HEAD~1`);
         } else {
             this.ux.log('Getting changed files from branch');
-            filesList = shell.exec(`git diff --no-renames --diff-filter=d --name-only --relative=${this.flags.projectfolder} origin/${this.flags.branch} ${workingBranch}`);
+            filesList = shell.exec(`git diff --no-renames --diff-filter=d --name-only --relative=${this.flags.projectfolder} origin/${this.flags.branch}...${workingBranch}`);
         }
 
         // if there are no files to deploy
@@ -167,10 +167,25 @@ export default class Org extends SfdxCommand {
         // if there are files and no errors, then deploy
         this.ux.log(`Deploying`);
         this.ux.log(`=========`);
+        let deploymentReportString;
+        let jsonDeploymentReport;
         if (this.flags.validateonly) {
-            results[numResults++] = shell.exec(`sfdx force:source:deploy -c -p "${this.flags.output}" -u ${this.flags.targetusername} -l ${this.flags.testlevel} --loglevel=debug --verbose -w 60`);
+            deploymentReportString = shell.exec(`sfdx force:source:deploy -c -p "${this.flags.output}" -u ${this.flags.targetusername} -l ${this.flags.testlevel} --loglevel=debug --verbose -w 60 --json`);
         } else {
-            results[numResults++] = shell.exec(`sfdx force:source:deploy -p "${this.flags.output}" -u ${this.flags.targetusername} -l ${this.flags.testlevel} --loglevel=debug --verbose -w 60`);
+            deploymentReportString = shell.exec(`sfdx force:source:deploy -p "${this.flags.output}" -u ${this.flags.targetusername} -l ${this.flags.testlevel} --loglevel=debug --verbose -w 60 --json`);
+        }
+        
+        jsonDeploymentReport = JSON.parse(deploymentReportString);
+
+        this.ux.log(jsonDeploymentReport.result.status);
+
+        if (jsonDeploymentReport.result.status == 'Failed' || !jsonDeploymentReport.result.success) {
+            let failedResults;
+            let componentFailures = jsonDeploymentReport.result.details.componentFailures;
+            componentFailures.forEach(element => {
+                failedResults += element.fullName + ' - ' + element.problem + '\n';
+            });
+            throw new SfdxError('Deployment failed\n' + failedResults, 'Error');
         }
 
         if (!results[numResults - 1].stderr) this.ux.log(`Deployed succesfully ${numFiles} files`);
