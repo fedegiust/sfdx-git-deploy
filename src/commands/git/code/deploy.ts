@@ -179,13 +179,24 @@ export default class Org extends SfdxCommand {
 
         this.ux.log(jsonDeploymentReport.result.status);
 
-        if (jsonDeploymentReport.result.status == 'Failed' || !jsonDeploymentReport.result.success) {
-            let failedResults;
-            let componentFailures = jsonDeploymentReport.result.details.componentFailures;
-            componentFailures.forEach(element => {
-                failedResults += element.fullName + ' - ' + element.problem + '\n';
-            });
-            throw new SfdxError('Deployment failed\n' + failedResults, 'Error');
+        if (jsonDeploymentReport.result.hasOwnProperty('status') && !jsonDeploymentReport.result.hasOwnProperty('success')) {
+            if (jsonDeploymentReport.result.status == 'Failed') {
+                let failedResults = '';
+                let componentFailures = jsonDeploymentReport.result.details.hasOwnProperty('componentFailures') ? jsonDeploymentReport.result.details.componentFailures : [];
+                componentFailures.forEach(element => {
+                    failedResults += element.fullName + ' - ' + element.problem + '\n';
+                });
+                if (failedResults.length > 0) {
+                    throw new SfdxError('Deployment failed\n' + failedResults, 'Error');
+                }    
+            }
+            if (jsonDeploymentReport.result.status == 'InProgress') {
+                throw new SfdxError('Deployment still in progress\nIt\'s taking a long time to deploy, please check deployment ' + jsonDeploymentReport.result.id + ' status in the target Org', 'Error');
+            }
+
+            if (jsonDeploymentReport.result.status == 0) {
+                throw new SfdxError('Something went wrong while trying to deploy, please check deployment ' + jsonDeploymentReport.result.id + ' status in the target Org', 'Error');
+            }
         }
 
         if (!results[numResults - 1].stderr) this.ux.log(`Deployed succesfully ${numFiles} files`);
