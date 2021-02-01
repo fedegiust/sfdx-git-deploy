@@ -179,8 +179,8 @@ export default class Org extends SfdxCommand {
 
         this.ux.log(jsonDeploymentReport.result.status);
 
-        if (jsonDeploymentReport.result.hasOwnProperty('status') && !jsonDeploymentReport.result.hasOwnProperty('success')) {
-            if (jsonDeploymentReport.result.status == 'Failed') {
+        if ((jsonDeploymentReport.result.hasOwnProperty('success') && !jsonDeploymentReport.result.success) || (jsonDeploymentReport.hasOwnProperty('status') && jsonDeploymentReport.status === 0)) {
+            if (jsonDeploymentReport.result.status === 'Failed') {
                 let failedResults = '';
                 let componentFailures = jsonDeploymentReport.result.details.hasOwnProperty('componentFailures') ? jsonDeploymentReport.result.details.componentFailures : [];
                 componentFailures.forEach(element => {
@@ -189,12 +189,23 @@ export default class Org extends SfdxCommand {
                 if (failedResults.length > 0) {
                     throw new SfdxError('Deployment failed\n' + failedResults, 'Error');
                 }    
+                let failedTests = '';
+
+                let testFailures = jsonDeploymentReport.result.details.runTestResult.hasOwnProperty('failures') ? jsonDeploymentReport.result.details.runTestResult.failures : [];
+                
+                testFailures.forEach(element => {
+                    failedTests += element.name + ' - ' + element.methodName + ' - ' + element.message + '\n' + element.stackTrace + '\n';
+                });                
+
+                if (testFailures.length > 0) {
+                    throw new SfdxError('Deployment failed\n' + failedResults, 'Error');
+                }                  
             }
-            if (jsonDeploymentReport.result.status == 'InProgress') {
+            if (jsonDeploymentReport.result.status === 'InProgress') {
                 throw new SfdxError('Deployment still in progress\nIt\'s taking a long time to deploy, please check deployment ' + jsonDeploymentReport.result.id + ' status in the target Org', 'Error');
             }
 
-            if (jsonDeploymentReport.result.status == 0) {
+            if (jsonDeploymentReport.result.status === 0) {
                 throw new SfdxError('Something went wrong while trying to deploy, please check deployment ' + jsonDeploymentReport.result.id + ' status in the target Org', 'Error');
             }
         }
