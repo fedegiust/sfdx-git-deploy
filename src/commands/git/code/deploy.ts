@@ -187,7 +187,7 @@ export default class Org extends SfdxCommand {
                     failedResults += element.fullName + ' - ' + element.problem + '\n';
                 });
                 if (failedResults.length > 0) {
-                    throw new SfdxError('Deployment failed\n' + failedResults, 'Error');
+                    throw new SfdxError('Deployment ' + jsonDeploymentReport.result.id + ' failed\n' + failedResults, 'Error');
                 }    
                 let failedTests = '';
 
@@ -198,12 +198,12 @@ export default class Org extends SfdxCommand {
                 });                
 
                 if (testFailures.length > 0) {
-                    throw new SfdxError('Deployment failed, one or more of the Unit Tests failed\n' + failedTests, 'Error');
+                    throw new SfdxError('Deployment ' + jsonDeploymentReport.result.id + ' failed, one or more of the Unit Tests failed\n' + failedTests, 'Error');
                 } 
                                  
             }
             if (jsonDeploymentReport.result.status === 'InProgress') {
-                throw new SfdxError('Deployment still in progress\nIt\'s taking a long time to deploy, please check deployment ' + jsonDeploymentReport.result.id + ' status in the target Org', 'Error');
+                throw new SfdxError('Deployment ' + jsonDeploymentReport.result.id + ' still in progress\nIt\'s taking a long time to deploy, please check deployment ' + jsonDeploymentReport.result.id + ' status in the target Org', 'Error');
             }
 
             if (jsonDeploymentReport.result.status === 0) {
@@ -211,7 +211,7 @@ export default class Org extends SfdxCommand {
             }
         }
 
-        if (!results[numResults - 1].stderr) this.ux.log(`Deployed succesfully ${numFiles} files`);
+        if (!results[numResults - 1].stderr) this.ux.log(`Deployment ${jsonDeploymentReport.result.id} was succesful. Deployed ${numFiles} files`);
         // Return an object to be displayed with --json
         return results[numResults - 1];
     }
