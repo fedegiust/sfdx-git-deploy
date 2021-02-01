@@ -198,8 +198,9 @@ export default class Org extends SfdxCommand {
                 });                
 
                 if (testFailures.length > 0) {
-                    throw new SfdxError('Deployment failed\n' + failedResults, 'Error');
-                }                  
+                    throw new SfdxError('Deployment failed, one or more of the Unit Tests failed\n' + failedTests, 'Error');
+                } 
+                                 
             }
             if (jsonDeploymentReport.result.status === 'InProgress') {
                 throw new SfdxError('Deployment still in progress\nIt\'s taking a long time to deploy, please check deployment ' + jsonDeploymentReport.result.id + ' status in the target Org', 'Error');
