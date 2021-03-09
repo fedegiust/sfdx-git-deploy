@@ -206,6 +206,10 @@ export default class Org extends SfdxCommand {
                 throw new SfdxError('Deployment ' + jsonDeploymentReport.result.id + ' still in progress\nIt\'s taking a long time to deploy, please check deployment ' + jsonDeploymentReport.result.id + ' status in the target Org', 'Error');
             }
 
+            if (jsonDeploymentReport.result.status === 'Canceled') {
+                throw new SfdxError('Deployment ' + jsonDeploymentReport.result.id + ' has been canceled by ' + jsonDeploymentReport.result.canceledByName + ' \n', 'Error');
+            }            
+
             if (jsonDeploymentReport.result.status === 0) {
                 throw new SfdxError('Something went wrong while trying to deploy, please check deployment ' + jsonDeploymentReport.result.id + ' status in the target Org', 'Error');
             }
