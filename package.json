@@ -1,7 +1,7 @@
 {
   "name": "sfdx-git-deploy",
   "description": "sfdx plugin to deploy latest changes to sandbox",
-  "version": "1.0.45",
+  "version": "1.0.47",
   "author": "Federico Giust",
   "bugs": "https://github.com/fedegiust/sfdx-deploy-git/issues",
   "dependencies": {
@@ -9,8 +9,9 @@
     "@oclif/config": "^1",
     "@oclif/errors": "^1",
     "@salesforce/command": "^3.1.0",
-    "@salesforce/core": "^2.4.1",
-    "tslib": "^1"
+    "@salesforce/core": "^2.20.5",
+    "tslib": "^1",
+    "shelljs": "^0.8.4"
   },
   "devDependencies": {
     "@oclif/dev-cli": "^1.26.0",
