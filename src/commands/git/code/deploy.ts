@@ -25,7 +25,8 @@ export default class Org extends SfdxCommand {
         projectfolder: flags.string({ char: 'p', description: messages.getMessage('projectFolderFlagDescription') }),
         includeuntracked: flags.boolean({ char: 'i', description: messages.getMessage('includeUntrackedFlagDescription') }),
         validateonly: flags.boolean({ char: 'v', description: messages.getMessage('validateFlagDescription') }),
-        verbose: flags.builtin({ description: messages.getMessage('verboseFlagDescription') })
+        verbose: flags.builtin({ description: messages.getMessage('verboseFlagDescription') }),
+        dodeploy: flags.boolean({ description: messages.getMessage('doDeployDescription')})
     };
 
     // Comment this out if your command does not require an org username
@@ -83,6 +84,10 @@ export default class Org extends SfdxCommand {
             this.flags.verbose = false;
         }  
 
+        if (typeof this.flags.dodeploy == "undefined") {
+            this.ux.log('The dodeploy flag is not set, so it will default to true. ');
+            this.flags.dodeploy = true;
+        }          
         // Start preparing
         this.ux.log(`Preparing deployment`);
         this.ux.log(`====================`);
@@ -139,19 +144,25 @@ export default class Org extends SfdxCommand {
         }
 
         let numFiles = 0;
+        let pathCreated = [];
+        let numApex = 0;
         // iterate through file list and copy to the output folder
         filesListArr.forEach(element => {
             if (!element.startsWith('.') && !element.startsWith('config') && !element.startsWith('manifest') && !element.startsWith('node_modules') && !element.startsWith('scripts')) {
                 let dest = this.flags.output + '/' + element.substring(0, element.lastIndexOf("/")).replace('"', '');
                 if (dest != '' && element != '') {
-                    shell.mkdir('-p', dest);
-                    if (element.includes("/classes") || element.includes("/triggers") || element.includes("/pages") || element.includes("/components")) {
+                    if (!pathCreated.includes(dest)) {
+                        shell.mkdir('-p', dest);
+                        pathCreated.push(dest);    
+                    }
+                    if (element.includes(".cls") || element.includes(".trigger") || element.includes(".page") || element.includes(".component")) {
                         let fn = element.replace('-meta.xml', '');
                         if (fn.startsWith('"main') || fn.startsWith('main')) {
                             fn = fn.replace('main/', this.flags.projectfolder + '/main/');
                         }
                         results[numResults++] = shell.cp('-r', fn, dest);
                         results[numResults++] = shell.cp('-r', fn + '-meta.xml', dest);
+                        numApex++;
                     } else {
                         let fn = element;
                         if (fn.startsWith('"main') || fn.startsWith('main')) {
@@ -170,9 +181,17 @@ export default class Org extends SfdxCommand {
         let deploymentReportString;
         let jsonDeploymentReport;
         if (this.flags.validateonly) {
-            deploymentReportString = shell.exec(`sfdx force:source:deploy -c -p "${this.flags.output}" -u ${this.flags.targetusername} -l ${this.flags.testlevel} --loglevel=debug --verbose -w 60 --json`);
+            if (numApex == 0) {
+                deploymentReportString = shell.exec(`sfdx force:source:deploy -c -p "${this.flags.output}" -u ${this.flags.targetusername} --loglevel=debug --verbose -w 1000 --json`);
+            } else {
+                deploymentReportString = shell.exec(`sfdx force:source:deploy -c -p "${this.flags.output}" -u ${this.flags.targetusername} -l ${this.flags.testlevel} --loglevel=debug --verbose -w 1000 --json`);
+            }
         } else {
-            deploymentReportString = shell.exec(`sfdx force:source:deploy -p "${this.flags.output}" -u ${this.flags.targetusername} -l ${this.flags.testlevel} --loglevel=debug --verbose -w 60 --json`);
+            if (numApex == 0) {
+                deploymentReportString = shell.exec(`sfdx force:source:deploy -p "${this.flags.output}" -u ${this.flags.targetusername} --loglevel=debug --verbose -w 1000 --json`);
+            } else {
+                deploymentReportString = shell.exec(`sfdx force:source:deploy -p "${this.flags.output}" -u ${this.flags.targetusername} -l ${this.flags.testlevel} --loglevel=debug --verbose -w 1000 --json`);
+            }
         }
         
         jsonDeploymentReport = JSON.parse(deploymentReportString);
